@@ -1,0 +1,16 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="basketapp.models.Basket.objects" />
+          <option value="django.db.models.fields.related.ForeignKey.price" />
+          <option value="basketap.models.Basket.objects" />
+          <option value="productshop.models.Product.objects" />
+          <option value="productshop.models.ProductCategory.objects" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
