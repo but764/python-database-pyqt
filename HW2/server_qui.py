@@ -132,179 +132,81 @@ class ConfigWindow(QDialog):
         self.initUI()
 
     def initUI(self):
-        """
-        Общий предок для клиента и сервера.
-        """
-        import socket
-        from abc import ABC, abstractmethod
-        from message import Message
-        import logging
-        import time
-        from common.variables import *
-        from descrptrs import Port
-        from metaclasses import ServerVerifier, TransportVerifier
-        from errors import ServerError
+        # Настройки окна
+        self.setFixedSize(365, 260)
+        self.setWindowTitle('Настройки сервера')
 
-        # class Transport(ABC):
-        class Transport(metaclass=TransportVerifier):
-            """
-            Класс определеят общие свойства и методы для клиента и сервера.
-            """
-            LOGGER = logging.getLogger('')  # инициализируем атрибут класса
-            # Валидация значения порта через дескриптор
-            port = Port()
+        # Надпись о файле базы данных:
+        self.db_path_label = QLabel('Путь до файла базы данных: ', self)
+        self.db_path_label.move(10, 10)
+        self.db_path_label.setFixedSize(240, 15)
 
-            # # Валидация значения порта через метод __new__ (рабочий код)
-            # def __new__(cls, *args, **kwargs):
-            #     try:
-            #         port = int(args[1])
-            #         if port < 1024 or port > 65535:
-            #             raise ValueError
-            #     except ValueError:
-            #         cls.LOGGER.critical(
-            #             f'Попытка запуска клиента с неподходящим номером порта: {port}.'
-            #             f' Допустимы адреса с 1024 до 65535')
-            #         return -1
-            #     except IndexError:
-            #         cls.LOGGER.critical('Не указан номер порта.')
-            #         return -1
-            #     #  если значения параметров корреткны создаем объект
-            #     return super().__new__(cls)
+        # Строка с путём базы
+        self.db_path = QLineEdit(self)
+        self.db_path.setFixedSize(250, 20)
+        self.db_path.move(10, 30)
+        self.db_path.setReadOnly(True)
 
-            def __init__(self, ipaddress, port):
-                self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.ipaddress = ipaddress
-                self.port = int(port)
-                self.LOGGER.info(f'Создан объект типа {type(self)}, присвоен сокет {self.socket}')
+        # Кнопка выбора пути.
+        self.db_path_select = QPushButton('Обзор...', self)
+        self.db_path_select.move(275, 28)
 
-            # Сокет для обмена сообщениями
-            @property
-            def socket(self):
-                """ Получаем сокет"""
-                return self.__socket
+        # Функция обработчик открытия окна выбора папки
+        def open_file_dialog():
+            global dialog
+            dialog = QFileDialog(self)
+            path = dialog.getExistingDirectory()
+            path = path.replace('/', '\\')
+            self.db_path.insert(path)
 
-            # Инициализация сервера/клента
-            # @abstractmethod
-            def init(self):
-                pass
+        self.db_path_select.clicked.connect(open_file_dialog)
 
-            # Запуск сервера/клиента
-            # @abstractmethod
-            def run(self):
-                pass
+        # Метка с именем поля файла базы данных
+        self.db_file_label = QLabel('Имя файла базы данных: ', self)
+        self.db_file_label.move(10, 68)
+        self.db_file_label.setFixedSize(180, 15)
 
-            # Обработать сообщение (послать или получить в зависимости от типа транспорта)
-            # @abstractmethod
-            def process_message(self, message):
-                pass
+        # Поле для ввода имени файла
+        self.db_file = QLineEdit(self)
+        self.db_file.move(200, 66)
+        self.db_file.setFixedSize(150, 20)
 
-            # Послать сообщение адресвту
-            @staticmethod
-            def send(tosocket, message):
-                Message.send(tosocket, message)
+        # Метка с номером порта
+        self.port_label = QLabel('Номер порта для соединений:', self)
+        self.port_label.move(10, 108)
+        self.port_label.setFixedSize(180, 15)
 
-            # Принять сообщение от адресвта
-            @staticmethod
-            def get(fromsocket):
-                return Message.get(fromsocket)
+        # Поле для ввода номера порта
+        self.port = QLineEdit(self)
+        self.port.move(200, 108)
+        self.port.setFixedSize(150, 20)
 
-            # Возвращает рабочий набор ip-адреса и порта
-            @property
-            def connectstring(self):
-                return (self.ipaddress, self.port)
+        # Метка с адресом для соединений
+        self.ip_label = QLabel('С какого IP принимаем соединения:', self)
+        self.ip_label.move(10, 148)
+        self.ip_label.setFixedSize(180, 15)
 
-            # Устнавливаеи тип логгера в зависимости от функции (клиент или сервер)
-            @classmethod
-            def set_logger_type(cls, logtype):
-                cls.LOGGER = logging.getLogger(logtype)
-                return cls.LOGGER
+        # Метка с напоминанием о пустом поле.
+        self.ip_label_note = QLabel(' оставьте это поле пустым, чтобы\n принимать соединения с любых адресов.', self)
+        self.ip_label_note.move(10, 168)
+        self.ip_label_note.setFixedSize(500, 30)
 
-            @staticmethod
-            def create_exit_message(account_name):
-                """Функция создаёт словарь с сообщением о выходе"""
-                return {
-                    ACTION: EXIT,
-                    TIME: time.time(),
-                    ACCOUNT_NAME: account_name
-                }
+        # Поле для ввода ip
+        self.ip = QLineEdit(self)
+        self.ip.move(200, 148)
+        self.ip.setFixedSize(150, 20)
 
-            @staticmethod
-            def print_help():
-                """Функция выводящяя справку по использованию"""
-                print('Поддерживаемые команды:')
-                print('message - отправить сообщение. Кому и текст будет запрошены отдельно.')
-                print('help - вывести подсказки по командам')
-                print('exit - выход из программы')
+        # Кнопка сохранения настроек
+        self.save_btn = QPushButton('Сохранить', self)
+        self.save_btn.move(190, 220)
 
-            @staticmethod
-            # Функция запроса списка известных пользователей
-            def user_list_request(sock, username):
-                Transport.LOGGER.debug(f'Запрос списка известных пользователей {username}')
-                req = {
-                    ACTION: USERS_REQUEST,
-                    TIME: time.time(),
-                    ACCOUNT_NAME: username
-                }
-                Transport.send(sock, req)
-                ans = Transport.get(sock)
-                if RESPONSE in ans and ans[RESPONSE] == 202:
-                    return ans[LIST_INFO]
-                else:
-                    raise ServerError
+        # Кнопка закрытия окна
+        self.close_button = QPushButton('Закрыть', self)
+        self.close_button.move(275, 220)
+        self.close_button.clicked.connect(self.close)
 
-            @staticmethod
-            # Функция запрос контакт листа
-            def contacts_list_request(sock, name):
-                Transport.LOGGER.debug(f'Запрос контакт листа для пользователя {name}')
-                req = {
-                    ACTION: GET_CONTACTS,
-                    TIME: time.time(),
-                    USER: name
-                }
-                Transport.LOGGER.debug(f'Сформирован запрос {req}')
-                Transport.send(sock, req)
-                ans = Transport.get(sock)
-                Transport.LOGGER.debug(f'Получен ответ {ans}')
-                if RESPONSE in ans and ans[RESPONSE] == 202:
-                    return ans[LIST_INFO]
-                else:
-                    raise ServerError
+        self.show()
 
-            @staticmethod
-            # Функция добавления пользователя в контакт лист
-            def add_contact(sock, username, contact):
-                Transport.LOGGER.debug(f'Создание контакта {contact}')
-                req = {
-                    ACTION: ADD_CONTACT,
-                    TIME: time.time(),
-                    USER: username,
-                    ACCOUNT_NAME: contact
-                }
-                Transport.send(sock, req)
-                ans = Transport.get(sock)
-                if RESPONSE in ans and ans[RESPONSE] == 200:
-                    pass
-                else:
-                    raise ServerError('Ошибка создания контакта')
-                print('Удачное создание контакта.')
-
-            @staticmethod
-            # Функция удаления пользователя из контакт листа
-            def remove_contact(sock, username, contact):
-                Transport.LOGGER.debug(f'Создание контакта {contact}')
-                req = {
-                    ACTION: REMOVE_CONTACT,
-                    TIME: time.time(),
-                    USER: username,
-                    ACCOUNT_NAME: contact
-                }
-                Transport.send(sock, req)
-                ans = Transport.get(sock)
-                if RESPONSE in ans and ans[RESPONSE] == 200:
-                    pass
-                else:
-                    raise ServerError('Ошибка удаления клиента')
-                print('Удачное удаление')
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

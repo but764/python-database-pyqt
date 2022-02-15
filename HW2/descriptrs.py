@@ -12,6 +12,5 @@ class Port:
         instance.__dict__[self.name] = value
 
     def __set_name__(self, owner, name):
-        # owner - <class '__main__.Server'>
-        # name - port
+        # owner - <class '__main__.Server'>        # name - port
         self.name = name
